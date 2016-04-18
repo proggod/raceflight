@@ -36,7 +36,6 @@
 #define LED2 PB6
 
 #define BEEPER PC9
-#define BEEPER_INVERTED
 
 #define INVERTER PC6
 #define INVERTER_USART USART6
@@ -55,8 +54,7 @@
 #define GYRO_MPU9250_ALIGN CW270_DEG
 
 #define MAG
-#define USE_MAG_AK8963
-#define MAG_AK8963_ALIGN CW270_DEG // check on that one
+//#define USE_MAG_HMC5883
 
 #define BARO
 #define USE_BARO_MS5611

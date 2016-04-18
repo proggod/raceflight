@@ -47,7 +47,6 @@
 #endif
 #define PWM_BRUSHED_TIMER_MHZ 8
 
-
 typedef struct sonarGPIOConfig_s {
     GPIO_TypeDef *gpio;
     uint16_t triggerPin;
@@ -66,16 +65,13 @@ typedef struct drv_pwm_config_s {
 #ifdef STM32F303xC
     bool useUART3;
 #endif
-#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+#ifdef STM32F4
     bool useUART2;
     bool useUART6;
 #endif
     bool useVbat;
 	bool useOneshot;
-    bool useFixedPWM;
-    bool useOneshot42;
-    bool useMultiShot;
-    bool usePwmRate;
+    bool useFastPWM;
     bool useSoftSerial;
     bool useLEDStrip;
 #ifdef SONAR
@@ -92,6 +88,8 @@ typedef struct drv_pwm_config_s {
 #endif
     bool airplane;       // fixed wing hardware config, lots of servos etc
     uint16_t motorPwmRate;
+    uint8_t motorPwmProtocol;
+    
     uint16_t idlePulse;  // PWM value to use when initializing the driver. set this to either PULSE_1MS (regular pwm),
                          // some higher value (used by 3d mode), or 0, for brushed pwm drivers.
     sonarGPIOConfig_t *sonarGPIOConfig;
@@ -108,6 +106,13 @@ typedef enum {
   PWM_PF_OUTPUT_PROTOCOL_MULTISHOT = (1 << 5)
 } pwmPortFlags_e;
 
+typedef enum {
+	MOTOR_PWM_PROTOCOL_STD = 0,
+	MOTOR_PWM_PROTOCOL_125,
+	MOTOR_PWM_PROTOCOL_42,
+	MOTOR_PWM_PROTOCOL_MULTI,
+	MOTOR_PWM_PROTOCOL_BRUSHED,
+} pwmMotorProtocol_e;
 
 typedef struct pwmPortConfiguration_s {
     uint8_t index;

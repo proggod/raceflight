@@ -18,13 +18,13 @@
 TARGET		?= REVO
 
 # Compile-time options
-OPTIONS		?=
+OPTIONS	  ?=
 
 # compile for OpenPilot BootLoader support
-OPBL ?=no
+OPBL      ?= no
 
 # Debugger optons, must be empty or GDB
-DEBUG ?= 
+DEBUG     ?= 
 
 # Serial port/Device for flashing
 SERIAL_DEVICE	?= $(firstword $(wildcard /dev/ttyUSB*) no-port-found)
@@ -36,11 +36,11 @@ FLASH_SIZE ?=
 # Things that need to be maintained as the source changes
 #
 
-FORKNAME			 = raceflight
+FORKNAME		 = raceflight
 
 CC3D_TARGETS     = CC3D CC3D_OPBL
 F1_TARGETS       = NAZE OLIMEXINO CJMCU EUSTM32F103RC PORT103R ALIENFLIGHTF1 AFROMINI
-F3_TARGETS       = STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENFLIGHTF3 COLIBRI_RACE MOTOLAB RMDO LUX_RACE SPRACINGF3MINI
+F3_TARGETS       = STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENFLIGHTF3 COLIBRI_RACE MOTOLAB RMDO LUX_RACE SPRACINGF3MINI ZCOREF3
 F4_TARGETS       = REVO REVO_OPBL SPARKY2 SPARKY2_OPBL REVONANO REVONANO_OPBL ALIENFLIGHTF4 BLUEJAYF4 VRCORE QUANTON QUANTON_OPBL AQ32_V2
 
 F405_TARGETS     = REVO REVO_OPBL SPARKY2 SPARKY2_OPBL ALIENFLIGHTF4 BLUEJAYF4 VRCORE QUANTON AQ32_V2
@@ -56,7 +56,7 @@ OPBL_VALID_TARGETS = CC3D_OPBL REVO_OPBL REVONANO_OPBL SPARKY2_OPBL QUANTON_OPBL
 
 64K_TARGETS  = CJMCU
 128K_TARGETS = ALIENFLIGHTF1 $(CC3D_TARGETS) NAZE OLIMEXINO RMDO AFROMINI
-256K_TARGETS = EUSTM32F103RC PORT103R STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENFLIGHTF3 COLIBRI_RACE MOTOLAB LUX_RACE SPRACINGF3MINI $(F4_TARGETS)
+256K_TARGETS = EUSTM32F103RC PORT103R STM32F3DISCOVERY CHEBUZZF3 NAZE32PRO SPRACINGF3 IRCFUSIONF3 SPARKY ALIENFLIGHTF3 COLIBRI_RACE MOTOLAB LUX_RACE SPRACINGF3MINI ZCOREF3 $(F4_TARGETS)
 
 # Configure default flash sizes for the targets
 ifeq ($(FLASH_SIZE),)
@@ -162,8 +162,17 @@ EXCLUDES = stm32f4xx_crc.c \
 		stm32f4xx_fmpi2c.c \
 		stm32f4xx_lptim.c \
 		stm32f4xx_qspi.c \
-		stm32f4xx_spdifrx.c
-		
+		stm32f4xx_spdifrx.c \
+		stm32f4xx_cryp.c \
+		stm32f4xx_cryp_aes.c \
+		stm32f4xx_hash_md5.c \
+		stm32f4xx_cryp_des.c \
+		stm32f4xx_rtc.c \
+		stm32f4xx_hash.c \
+		stm32f4xx_dbgmcu.c \
+		stm32f4xx_cryp_tdes.c \
+		stm32f4xx_hash_sha1.c
+
 
 ifeq ($(TARGET),$(filter $(TARGET), $(F411_TARGETS)))
 EXCLUDES += stm32f4xx_fsmc.c
@@ -318,6 +327,12 @@ TARGET_FLAGS := $(TARGET_FLAGS) -DNAZE -DALIENFLIGHT
 TARGET_DIR = $(ROOT)/src/main/target/NAZE
 endif
 
+ifeq ($(TARGET),ZCOREF3)
+# ZCOREF3 is a VARIANT of SPRACINGF3
+TARGET_FLAGS := $(TARGET_FLAGS) -DSPRACINGF3 -DZCORE
+TARGET_DIR = $(ROOT)/src/main/target/SPRACINGF3
+endif
+
 ifeq ($(TARGET),$(filter $(TARGET), $(CC3D_TARGETS)))
 TARGET_FLAGS := $(TARGET_FLAGS) -DCC3D 
 TARGET_DIR = $(ROOT)/src/main/target/CC3D
@@ -391,7 +406,6 @@ COMMON_SRC = \
 		   common/encoding.c \
 		   common/filter.c \
 		   scheduler.c \
-		   scheduler_tasks.c \
 		   main.c \
 		   mw.c \
 		   flight/altitudehold.c \
@@ -399,6 +413,7 @@ COMMON_SRC = \
 		   flight/pid.c \
 		   flight/imu.c \
 		   flight/mixer.c \
+		   flight/lowpass.c \
 		   drivers/bus_i2c_soft.c \
 		   drivers/exti.c \
 		   drivers/io.c \
@@ -412,7 +427,9 @@ COMMON_SRC = \
 		   io/rc_controls.c \
 		   io/rc_curves.c \
 		   io/serial.c \
-		   io/serial_1wire.c \
+		   io/serial_4way.c \
+		   io/serial_4way_avrootloader.c \
+		   io/serial_4way_stk500v2.c \
 		   io/serial_cli.c \
 		   io/serial_msp.c \
 		   io/statusindicator.c \
@@ -425,7 +442,6 @@ COMMON_SRC = \
 		   rx/spektrum.c \
 		   rx/xbus.c \
 		   rx/ibus.c \
-		   rx/jetiexbus.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
@@ -447,7 +463,6 @@ HIGHEND_SRC = \
 		   telemetry/frsky.c \
 		   telemetry/hott.c \
 		   telemetry/smartport.c \
-		   telemetry/ltm.c \
 		   sensors/sonar.c \
 		   sensors/barometer.c \
 		   blackbox/blackbox.c \
@@ -883,8 +898,10 @@ SPRACINGF3_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6050.c \
+		   drivers/accgyro_mpu6500.c \
 		   drivers/barometer_ms5611.c \
 		   drivers/compass_ak8975.c \
+		   drivers/compass_ak8963.c \
 		   drivers/barometer_bmp085.c \
 		   drivers/barometer_bmp280.c \
 		   drivers/compass_hmc5883l.c \
@@ -897,6 +914,8 @@ SPRACINGF3_SRC = \
 		   io/flashfs.c \
 		   $(HIGHEND_SRC) \
 		   $(COMMON_SRC)
+
+ZCOREF3_SRC = $(SPRACINGF3_SRC)
 
 IRCFUSIONF3_SRC = \
 		   $(STM32F30x_COMMON_SRC) \

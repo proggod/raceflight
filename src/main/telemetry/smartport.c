@@ -23,6 +23,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/gpio.h"
 #include "drivers/timer.h"
+#include "drivers/pwm_mapping.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
 #include "drivers/light_led.h"
@@ -326,13 +327,7 @@ void handleSmartPortTelemetry(void)
 #endif
             case FSSP_DATAID_VFAS       :
                 if (feature(FEATURE_VBAT)) {
-                    uint16_t vfasVoltage;
-                    if (telemetryConfig->frsky_vfas_cell_voltage) {
-                        vfasVoltage = vbat / batteryCellCount;
-                    } else {
-                        vfasVoltage = vbat;
-                    }
-                    smartPortSendPackage(id, vfasVoltage * 10); // given in 0.1V, convert to volts
+                    smartPortSendPackage(id, vbat * 10); // given in 0.1V, convert to volts
                     smartPortHasRequest = 0;
                 }
                 break;

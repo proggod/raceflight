@@ -32,6 +32,7 @@
 #include "usb_init.h"
 #include "hw_config.h"
 #endif
+#include "common/utils.h"
 
 #include "drivers/system.h"
 
@@ -85,27 +86,6 @@ static uint8_t usbVcpRead(serialPort_t *instance)
     }
 
     return buf[0];
-}
-
-static void usbVcpWriteBuf(serialPort_t *instance, void *data, int count)
-{
-    UNUSED(instance);
-
-
-    if (!(usbIsConnected() && usbIsConfigured())) {
-        return;
-    }
-
-    uint32_t start = millis();
-    for (uint8_t *p = data; count > 0; ) {
-        uint32_t txed = CDC_Send_DATA(p, count);
-        count -= txed;
-        p += txed;
-
-        if (millis() - start > USB_TIMEOUT) {
-            break;
-        }
-    }
 }
 
 static bool usbVcpFlush(vcpPort_t *port)
@@ -169,7 +149,6 @@ static const struct serialPortVTable usbVTable[] = {
         .setMode = usbVcpSetMode,
         .beginWrite = usbVcpBeginWrite,
         .endWrite = usbVcpEndWrite,
-        .writeBuf = usbVcpWriteBuf
     }
 };
 
@@ -177,7 +156,7 @@ serialPort_t *usbVcpOpen(void)
 {
     vcpPort_t *s;
 
-#if defined(STM32F40_41xxx) || defined (STM32F411xE)
+#ifdef STM32F4
 	USBD_Init(&USB_OTG_dev,
              USB_OTG_FS_CORE_ID,
              &USR_desc,
@@ -194,4 +173,11 @@ serialPort_t *usbVcpOpen(void)
     s->port.vTable = usbVTable;
 
     return (serialPort_t *)s;
+}
+
+uint32_t usbVcpGetBaudRate(serialPort_t *instance)
+{
+    UNUSED(instance);
+
+    return CDC_BaudRate();
 }

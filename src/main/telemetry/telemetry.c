@@ -39,8 +39,6 @@
 #include "telemetry/frsky.h"
 #include "telemetry/hott.h"
 #include "telemetry/smartport.h"
-#include "telemetry/ltm.h"
-#include "rx/jetiexbus.h"
 
 static telemetryConfig_t *telemetryConfig;
 
@@ -54,9 +52,7 @@ void telemetryInit(void)
     initFrSkyTelemetry(telemetryConfig);
     initHoTTTelemetry(telemetryConfig);
     initSmartPortTelemetry(telemetryConfig);
-    initLtmTelemetry(telemetryConfig);
-    initJetiExBusTelemetry(telemetryConfig);
-    
+
     telemetryCheckState();
 }
 
@@ -79,8 +75,6 @@ void telemetryCheckState(void)
     checkFrSkyTelemetryState();
     checkHoTTTelemetryState();
     checkSmartPortTelemetryState();
-    checkLtmTelemetryState();
-    checkJetiExBusTelemetryState();
 }
 
 void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
@@ -88,8 +82,6 @@ void telemetryProcess(rxConfig_t *rxConfig, uint16_t deadband3d_throttle)
     handleFrSkyTelemetry(rxConfig, deadband3d_throttle);
     handleHoTTTelemetry();
     handleSmartPortTelemetry();
-    handleLtmTelemetry();
-    handleJetiExBusTelemetry();
 }
 
 #endif
