@@ -32,10 +32,13 @@
 #include "drivers/serial_softserial.h"
 #endif
 
-#if defined(USE_USART1) || defined(USE_USART2) || defined(USE_USART3) || defined(USE_USART6)
+#if defined(USE_USART1) || defined(USE_USART2) || defined(USE_USART3) || defined(USE_USART4) || defined(USE_USART5) || defined(USE_USART6)
 #include "drivers/serial_uart.h"
 #endif
 
+#include "drivers/gpio.h"
+#include "drivers/light_led.h"
+ 
 #if defined(USE_VCP)
 #include "drivers/serial_usb_vcp.h"
 #endif
@@ -66,6 +69,12 @@ const serialPortIdentifier_e serialPortIdentifiers[SERIAL_PORT_COUNT] = {
 #ifdef USE_USART3
     SERIAL_PORT_USART3,
 #endif
+#ifdef USE_USART4
+    SERIAL_PORT_USART4,
+#endif
+#ifdef USE_USART5
+    SERIAL_PORT_USART5,
+#endif
 #ifdef USE_USART6
     SERIAL_PORT_USART6,
 #endif
@@ -95,7 +104,7 @@ baudRate_e lookupBaudRateIndex(uint32_t baudRate)
     return BAUD_AUTO;
 }
 
-static serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
+serialPortUsage_t *findSerialPortUsageByIdentifier(serialPortIdentifier_e identifier)
 {
     uint8_t index;
     for (index = 0; index < SERIAL_PORT_COUNT; index++) {
@@ -185,7 +194,7 @@ serialPort_t *findNextSharedSerialPort(uint16_t functionMask, serialPortFunction
     return NULL;
 }
 
-#define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_MSP | FUNCTION_TELEMETRY_SMARTPORT)
+#define ALL_TELEMETRY_FUNCTIONS_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_SMARTPORT | FUNCTION_TELEMETRY_LTM)
 #define ALL_FUNCTIONS_SHARABLE_WITH_MSP (FUNCTION_BLACKBOX | ALL_TELEMETRY_FUNCTIONS_MASK)
 
 bool isSerialConfigValid(serialConfig_t *serialConfigToCheck)
@@ -291,6 +300,16 @@ serialPort_t *openSerialPort(
 #ifdef USE_USART3
         case SERIAL_PORT_USART3:
             serialPort = uartOpen(USART3, callback, baudRate, mode, options);
+            break;
+#endif
+#ifdef USE_USART4
+        case SERIAL_PORT_USART4:
+            serialPort = uartOpen(UART4, callback, baudRate, mode, options);
+            break;
+#endif
+#ifdef USE_USART5
+        case SERIAL_PORT_USART5:
+            serialPort = uartOpen(UART5, callback, baudRate, mode, options);
             break;
 #endif
 #ifdef USE_USART6
@@ -429,3 +448,55 @@ void evaluateOtherData(serialPort_t *serialPort, uint8_t receivedChar)
         systemResetToBootloader();
     }
 }
+
+#if defined(GPS) || ! defined(SKIP_SERIAL_PASSTHROUGH)
+// Default data consumer for serialPassThrough.
+static void nopConsumer(uint8_t data)
+{
+    UNUSED(data);
+}
+
+/*
+ A high-level serial passthrough implementation. Used by cli to start an
+ arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
+ for specialized data processing.
+ */
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer 
+                       *leftC, serialConsumer *rightC)
+{
+    waitForSerialPortToFinishTransmitting(left);
+    waitForSerialPortToFinishTransmitting(right);
+
+    if (!leftC)
+        leftC = &nopConsumer;
+    if (!rightC)
+        rightC = &nopConsumer;
+
+    LED0_OFF;
+    LED1_OFF;
+
+    // Either port might be open in a mode other than MODE_RXTX. We rely on
+    // serialRxBytesWaiting() to do the right thing for a TX only port. No
+    // special handling is necessary OR performed.
+    while(1) {
+        // TODO: maintain a timestamp of last data received. Use this to
+        // implement a guard interval and check for `+++` as an escape sequence
+        // to return to CLI command mode.
+        // https://en.wikipedia.org/wiki/Escape_sequence#Modem_control
+        if (serialRxBytesWaiting(left)) {
+            LED0_ON;
+            uint8_t c = serialRead(left);
+            serialWrite(right, c);
+            leftC(c);
+            LED0_OFF;
+         }
+         if (serialRxBytesWaiting(right)) {
+             LED0_ON;
+             uint8_t c = serialRead(right);
+             serialWrite(left, c);
+             rightC(c);
+             LED0_OFF;
+         }
+     }
+ }
+ #endif

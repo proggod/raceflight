@@ -50,11 +50,12 @@ typedef enum {
     BOXFAILSAFE,
     BOXAIRMODE,
     BOXACROPLUS,
-	BOXALWAYSSTABILIZED,
-	BOXTEST1,
-	BOXTEST2,
-	BOXTEST3,
-	CHECKBOX_ITEM_COUNT
+    BOX3DDISABLESWITCH,
+    BOXALWAYSSTABILIZED,
+    BOXTEST1,
+    BOXTEST2,
+    BOXTEST3,
+    CHECKBOX_ITEM_COUNT
 } boxId_e;
 
 extern uint32_t rcModeActivationMask;
@@ -82,7 +83,7 @@ typedef enum {
     THROTTLE_HIGH
 } throttleStatus_e;
 
-#define AIRMODEDEADBAND 10
+#define AIRMODEDEADBAND 12
 
 typedef enum {
     NOT_CENTERED = 0,
@@ -190,10 +191,10 @@ typedef enum {
     ADJUSTMENT_ROLL_P,
     ADJUSTMENT_ROLL_I,
     ADJUSTMENT_ROLL_D,
+    ADJUSTMENT_FUNCTION_COUNT,
 
 } adjustmentFunction_e;
 
-#define ADJUSTMENT_FUNCTION_COUNT 21
 
 typedef enum {
     ADJUSTMENT_MODE_STEP,
@@ -245,7 +246,7 @@ typedef struct adjustmentState_s {
 #define MAX_SIMULTANEOUS_ADJUSTMENT_COUNT 4 // enough for 4 x 3position switches / 4 aux channel
 #endif
 
-#define MAX_ADJUSTMENT_RANGE_COUNT 12 // enough for 2 * 6pos switches.
+#define MAX_ADJUSTMENT_RANGE_COUNT 15
 
 void resetAdjustmentStates(void);
 void configureAdjustment(uint8_t index, uint8_t auxChannelIndex, const adjustmentConfig_t *adjustmentConfig);

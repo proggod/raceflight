@@ -36,8 +36,9 @@
 #define MAX_INPUTS  8
 
 #define PWM_TIMER_MHZ 1
-
+//TODO: Find out why these need to be the same and resolve the problem
 //these three have to be the same because of the ppmAvoidPWMTimerClash functions
+
 #define ONESHOT125_TIMER_MHZ 8
 #if defined(STM32F40_41xxx) || defined(STM32F411xE)
 #define MULTISHOT_TIMER_MHZ 48
@@ -71,9 +72,10 @@ typedef struct drv_pwm_config_s {
 #endif
     bool useVbat;
 	bool useOneshot;
-	bool useMultiShot;
-	bool usePwmRate;
-    bool useFastPWM;
+    bool useFixedPWM;
+    bool useOneshot42;
+    bool useMultiShot;
+    bool usePwmRate;
     bool useSoftSerial;
     bool useLEDStrip;
 #ifdef SONAR
@@ -137,7 +139,11 @@ enum {
     PWM13,
     PWM14,
     PWM15,
-    PWM16
+    PWM16,
+    PWM17,
+    PWM18,
+    PWM19,
+    PWM20
 };
 
 pwmOutputConfiguration_t *pwmGetOutputConfiguration(void);
