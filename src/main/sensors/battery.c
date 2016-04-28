@@ -166,6 +166,8 @@ void batteryInit(batteryConfig_t *initialBatteryConfig)
     batteryCellCount = 1;
     batteryWarningVoltage = 0;
     batteryCriticalVoltage = 0;
+    if (batteryConfig->vbatmincellvoltage == 33) 
+        batteryConfig->vbatmincellvoltage = 20;  /* will work old way if not changed*/
 }
 
 #define ADCVREF 3300   // in mV
